@@ -6,32 +6,53 @@ Created on Tue Jun 21 20:10:47 2022
 """
 
 import time
+import os
+import sys
 import urllib
 import pytesseract
 import requests
+from contextlib import contextmanager
 from datetime import datetime
 from pytz import timezone
 from PIL import Image
 from pytesseract import image_to_string
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
-
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+            
 def main():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
-    browser = webdriver.Chrome(chrome_options = chrome_options, executable_path=r"C:\Users\Vishaal Sudarsan\Documents\Python Files\chromedriver.exe")
-    browser.delete_all_cookies()
-    browser.get("https://checkvisaslots.com/pro.html")
+    with suppress_stdout():
+        browser = webdriver.Chrome(options = chrome_options, service=Service(ChromeDriverManager().install()))
+        browser.delete_all_cookies()
+        browser.get("https://checkvisaslots.com/pro.html")
+    print("1.Loaded Website\n")
     time.sleep(60)
-    element = browser.find_element_by_xpath("//*[@id='api_key']")
+    element = browser.find_element(By.XPATH, "//*[@id='api_key']")
     element.send_keys("H4BXV7")
-    element = browser.find_elements_by_xpath("//*[contains(text(), 'Submit')]")[0]
+    element = browser.find_element(By.XPATH, "//*[contains(text(), 'Submit')]")
     element.click()
-    time.sleep(10)
-    browser.get_screenshot_as_file("screenshot.png")
-    element = browser.find_elements_by_xpath("//*[contains(text(), 'Retrieve')]")[0]
-    element.click()
+    print("2.Submitted Access Key\n")
+    time.sleep(100)
+    #browser.get_screenshot_as_file("screenshot.png")
+    #element = browser.find_element(By.XPATH, "//*[contains(text(), 'Retrieve')]")
+    time.sleep(60)
+    element = browser.find_element(By.XPATH, "//*[@id='view_txn']")
+    element.send_keys("\n")
+    print("3.Clicked Retrieve Button\n")
     time.sleep(60)
     #browser.get_screenshot_as_file("screenshot.png")
     current_time = datetime.now(timezone("Asia/Kolkata")).strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -64,10 +85,11 @@ def main():
         send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + slot_text
         response = requests.get(send_text)
         print(response.json())
-    time.sleep(600)
+    time.sleep(300)
     
 while True:
     try:
         main()
-    except:
+    except Exception as e:
+        print(e)
         continue
